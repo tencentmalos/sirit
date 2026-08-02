@@ -86,7 +86,9 @@ enable_testing(true)
 
 # SPIR-V headers
 if (SIRIT_USE_SYSTEM_SPIRV_HEADERS)
-    find_package(SPIRV-Headers REQUIRED)
+    if (NOT TARGET SPIRV-Headers::SPIRV-Headers)
+        find_package(SPIRV-Headers REQUIRED)
+    endif()
 else()
     add_subdirectory(externals/SPIRV-Headers EXCLUDE_FROM_ALL)
     add_library(SPIRV-Headers::SPIRV-Headers ALIAS SPIRV-Headers)
