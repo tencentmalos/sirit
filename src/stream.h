@@ -11,6 +11,7 @@
 #include <concepts>
 #include <cstddef>
 #include <functional>
+#include <span>
 #include <string_view>
 #include <unordered_map>
 #include <variant>
@@ -78,24 +79,28 @@ public:
     }
 
     u32 LocalAddress() const noexcept {
-        return static_cast<u32>(words.size());
+        return static_cast<u32>(insert_index);
     }
 
     u32 Value(u32 index) const noexcept {
+        assert(index < insert_index);
         return words[index];
     }
 
     void SetValue(u32 index, u32 value) noexcept {
+        assert(index < insert_index);
         words[index] = value;
     }
 
     Stream& operator<<(spv::Op op) {
+        Reserve(1);
         op_index = insert_index;
         words[insert_index++] = static_cast<u32>(op);
         return *this;
     }
 
     Stream& operator<<(OpId op) {
+        Reserve(op.result_type.value != 0 ? 3 : 2);
         op_index = insert_index;
         words[insert_index++] = static_cast<u32>(op.opcode);
         if (op.result_type.value != 0) {
@@ -112,6 +117,7 @@ public:
     }
 
     Stream& operator<<(u32 value) {
+        Reserve(1);
         words[insert_index++] = value;
         return *this;
     }
@@ -165,6 +171,7 @@ public:
     }
 
     Stream& operator<<(std::string_view string) {
+        Reserve(WordsInString(string));
         InsertStringView(words, insert_index, string);
         return *this;
     }

@@ -4,7 +4,10 @@
  * 3-Clause BSD License
  */
 
+#include <algorithm>
+#include <array>
 #include <cassert>
+#include <stdexcept>
 
 #include "sirit/sirit.h"
 
@@ -28,12 +31,33 @@ Module::Module(u32 version_)
 Module::~Module() = default;
 
 std::vector<u32> Module::Assemble() const {
-    std::vector<u32> words = {spv::MagicNumber, version, GENERATOR_MAGIC_NUMBER, bound + 1, 0};
-    const auto insert = [&words](std::span<const u32> input) {
-        words.insert(words.end(), input.begin(), input.end());
+    size_t total_words = 5 + capabilities.size() * 2;
+    for (const std::string_view extension_name : extensions) {
+        total_words += 1 + WordsInString(extension_name);
+    }
+    total_words += ext_inst_imports->Words().size() + 3 + entry_points->Words().size() +
+                   execution_modes->Words().size() + debug->Words().size() +
+                   annotations->Words().size() + declarations->Words().size() +
+                   global_variables->Words().size() + code->Words().size();
+    std::vector<u32> words(total_words);
+    size_t insert_index = 0;
+    const auto insert = [&words, &insert_index](std::span<const u32> input) {
+        if (insert_index > words.size() || input.size() > words.size() - insert_index) {
+            throw std::logic_error{"Sirit SPIR-V assembly size mismatch"};
+        }
+        const auto output = words.begin() +
+                            static_cast<std::vector<u32>::difference_type>(insert_index);
+        std::copy(input.begin(), input.end(), output);
+        insert_index += input.size();
     };
 
-    words.reserve(words.size() + capabilities.size() * 2);
+    insert(std::array{
+        spv::MagicNumber,
+        version,
+        GENERATOR_MAGIC_NUMBER,
+        bound + 1,
+        0u,
+    });
     for (const spv::Capability capability : capabilities) {
         insert(std::array{
             MakeWord0(spv::Op::OpCapability, 2),
@@ -42,10 +66,8 @@ std::vector<u32> Module::Assemble() const {
     }
 
     for (const std::string_view extension_name : extensions) {
-        size_t string_words = WordsInString(extension_name);
-        words.push_back(MakeWord0(spv::Op::OpExtension, string_words + 1));
-        size_t insert_index = words.size();
-        words.resize(words.size() + string_words);
+        const size_t string_words = WordsInString(extension_name);
+        insert(std::array{MakeWord0(spv::Op::OpExtension, string_words + 1)});
         InsertStringView(words, insert_index, extension_name);
     }
 
@@ -64,6 +86,10 @@ std::vector<u32> Module::Assemble() const {
     insert(declarations->Words());
     insert(global_variables->Words());
     insert(code->Words());
+
+    if (insert_index != words.size()) {
+        throw std::logic_error{"Sirit SPIR-V assembly did not fill its output"};
+    }
 
     return words;
 }
