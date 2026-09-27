@@ -111,4 +111,23 @@ Id Module::OpGroupNonUniformIAdd(Id result_type, Id scope, spv::GroupOperation g
     return *code << OpId{spv::Op::OpGroupNonUniformIAdd, result_type} << scope << group_operation
                  << value << EndOp{};
 }
+
+#define DEFINE_GROUP_ARITHMETIC(name)                                                              \
+    Id Module::OpGroupNonUniform##name(Id result_type, Id scope,                                   \
+                                       spv::GroupOperation group_operation, Id value,              \
+                                       std::optional<Id> cluster_size) {                           \
+        code->Reserve(7);                                                                          \
+        return *code << OpId{spv::Op::OpGroupNonUniform##name, result_type} << scope               \
+                     << group_operation << value << cluster_size << EndOp{};                       \
+    }
+
+DEFINE_GROUP_ARITHMETIC(SMin)
+DEFINE_GROUP_ARITHMETIC(UMin)
+DEFINE_GROUP_ARITHMETIC(SMax)
+DEFINE_GROUP_ARITHMETIC(UMax)
+DEFINE_GROUP_ARITHMETIC(BitwiseAnd)
+DEFINE_GROUP_ARITHMETIC(BitwiseOr)
+DEFINE_GROUP_ARITHMETIC(BitwiseXor)
+
+#undef DEFINE_GROUP_ARITHMETIC
 } // namespace Sirit

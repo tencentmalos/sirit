@@ -1281,6 +1281,24 @@ public:
     // within the Execution scope.
     Id OpGroupNonUniformIAdd(Id result_type, Id scope, spv::GroupOperation group_operation, Id value);
 
+    // Integer and bitwise group operations of all Value operands contributed by active
+    // invocations within the Execution scope. cluster_size is required, and only allowed,
+    // when group_operation is ClusteredReduce.
+    Id OpGroupNonUniformSMin(Id result_type, Id scope, spv::GroupOperation group_operation,
+                             Id value, std::optional<Id> cluster_size = std::nullopt);
+    Id OpGroupNonUniformUMin(Id result_type, Id scope, spv::GroupOperation group_operation,
+                             Id value, std::optional<Id> cluster_size = std::nullopt);
+    Id OpGroupNonUniformSMax(Id result_type, Id scope, spv::GroupOperation group_operation,
+                             Id value, std::optional<Id> cluster_size = std::nullopt);
+    Id OpGroupNonUniformUMax(Id result_type, Id scope, spv::GroupOperation group_operation,
+                             Id value, std::optional<Id> cluster_size = std::nullopt);
+    Id OpGroupNonUniformBitwiseAnd(Id result_type, Id scope, spv::GroupOperation group_operation,
+                                   Id value, std::optional<Id> cluster_size = std::nullopt);
+    Id OpGroupNonUniformBitwiseOr(Id result_type, Id scope, spv::GroupOperation group_operation,
+                                  Id value, std::optional<Id> cluster_size = std::nullopt);
+    Id OpGroupNonUniformBitwiseXor(Id result_type, Id scope, spv::GroupOperation group_operation,
+                                   Id value, std::optional<Id> cluster_size = std::nullopt);
+
     // Result is the Value of the invocation identified by the id Id to all active invocations in
     // the group.
     Id OpGroupNonUniformBroadcast(Id result_type, Id scope, Id value, Id id);
